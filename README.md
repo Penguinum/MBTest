@@ -6,7 +6,8 @@ It's written in Moonscript, so MBTest.moon is a source and MBTest.lua is a compi
 ## Why don't you just pick full-featured testing framework?
 Because they can't be easily embedded in some sort of crazy system with its own `require` logic, no working stuff in `io` module and the whole different world. First I tried to extend [minctest-lua](https://github.com/codeplea/minctest-lua), which is very tiny and didn't require too many modifications to make it work, but now it's a completely different library.
 
-There are good Lua tools for testing. If you don't have limitations like I have then you probably should use them.
+There is plenty of [Lua tools for unit testing](http://lua-users.org/wiki/UnitTesting).
+If you don't have limitations like I have then you probably should use one of them.
 
 ## Usage
 ```lua
@@ -30,6 +31,30 @@ print(T.result().msg)
 
 Also have a look at example.lua
 
+### Full list of provided assertions
+* `are_equal(val1, val2)` -- Expects values to be equal. Compares tables by reference
+* `are_not_equal(val1, val2)` -- Expects values to not be equal. Compares tables by reference
+* `are_same(obj1, obj2)` -- Similar to are_equal, but performs deep comparison for tables
+* `are_not_same(obj1, obj2)` -- Similar to are_equal, but performs deep comparison for tables
+* `is_instance(value, typename)` -- Expects value to have type `typename`.
+You can also pass list of type names to check if value has some of those types.
+You can register your own types using method `registerType` (see below).
+* `is_not_instance(value, typename)` -- Expects value to have type `typename`.
+* `is_truthy(value)` -- Expects value to not be nil or false.
+* `is_falsy(value)` -- Expects value to be nil or false.
+* `has_no_errors(func)` -- Runs function func and expects it to not crash.
+* `has_errors(func)` -- Runs function func and expects it to crash.
+
+Remember that you can pass custom failure message as last parameter in every assertion function.
+
+### Registering your own types
+```lua
+local MBTest = require "MBTest"()
+MBTest.registerType("date", function(value)
+  return (type(value) == "table") and value.getYear -- An example of "heuristic" date type detection
+end)
+```
+
 ## TODOs
-* [ ] Documentation
+* [x] Documentation
 * [ ] Unstupiditification
