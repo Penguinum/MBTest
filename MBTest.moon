@@ -111,37 +111,37 @@ MBTest.newMBTest = (args={}) ->
   fail = (msg) -> { ok: false, :msg }
   success = (msg) -> { ok: true, :msg }
 
-  lt = {
+  mbtest = {
     onError: args.onError or (msg) =>
       @stop "Error: " .. tostring(msg)
     onFail: args.onFail
   }
 
-  if lt.onFail == "stop"
-    lt.onFail = (msg) =>
+  if mbtest.onFail == "stop"
+    mbtest.onFail = (msg) =>
       @stop msg
 
-  if lt.onError == "stop"
-    lt.onError = (msg) =>
+  if mbtest.onError == "stop"
+    mbtest.onError = (msg) =>
       @stop msg
 
-  lt.run = (name, func) ->
-    if lt.stopped
+  mbtest.run = (name, func) ->
+    if mbtest.stopped
       return
     ltContext\push name
     ok, ret = pcall ->
       func!
     ltContext\pop!
     if (not ok)
-      if not lt.stopped
-        if lt.onError
-          lt\onError(ret)
+      if not mbtest.stopped
+        if mbtest.onError
+          mbtest\onError(ret)
         else
           error ret
 
-  lt.stop = (msg) =>
-    lt.stopped = true
-    lt.result = ->
+  mbtest.stop = (msg) =>
+    mbtest.stopped = true
+    mbtest.result = ->
       {
         ok: false
         msg: msg
@@ -149,15 +149,15 @@ MBTest.newMBTest = (args={}) ->
 
   typecheckers = {}
 
-  lt.isinstance = (value, typename) ->
+  mbtest.isinstance = (value, typename) ->
     if typecheckers[typename]
       return typecheckers[typename](value)
     return type(value) == typename
 
-  lt.registerType = (name, typechecker) ->
+  mbtest.registerType = (name, typechecker) ->
     typecheckers[name] = typechecker
 
-  lt.report = ->
+  mbtest.report = ->
     getResult = (context) ->
       ret = {}
       errorMessages = {}
@@ -192,9 +192,9 @@ MBTest.newMBTest = (args={}) ->
     _, ret = getResult ltContext
     return ret
 
-  lt.result = ->
+  mbtest.result = ->
     indent = "-> "
-    result = lt.report!
+    result = mbtest.report!
     if result.ok
       return { ok: true, msg: "All tests passed"}
     ret = { "%d/%d tests passed"\format result.stats.succeed, result.stats.all }
@@ -210,13 +210,13 @@ MBTest.newMBTest = (args={}) ->
 
   wrapAssertion = (func, message, invert) ->
     (...) ->
-      if lt.stopped
+      if mbtest.stopped
         return
       ok, succeed, msg = pcall(func, ...)
       if not ok
         ltContext\addCheckResult fail "Error: " .. tostring(succeed)
-        if lt.onError
-          lt\onError(succeed)
+        if mbtest.onError
+          mbtest\onError(succeed)
       else
         msg = msg or message
         if invert
@@ -226,25 +226,25 @@ MBTest.newMBTest = (args={}) ->
         else
           msg = msg .. " " .. getLine!
           ltContext\addCheckResult fail msg
-          if lt.onFail
-            lt\onFail(msg)
+          if mbtest.onFail
+            mbtest\onFail(msg)
 
-  lt.registerAssertion = (args) ->
+  mbtest.registerAssertion = (args) ->
     if args.name
-      lt[args.name] = wrapAssertion(args.assertion, args.message)
+      mbtest[args.name] = wrapAssertion(args.assertion, args.message)
     if args.name_inverted
-      lt[args.name_inverted] = wrapAssertion(args.assertion, args.message_inverted, true)
+      mbtest[args.name_inverted] = wrapAssertion(args.assertion, args.message_inverted, true)
 
-  return lt
+  return mbtest
 
 
 --- Creates MBTest instance with some useful assertions
 -- @tparam table args Not used here but bypassed to MBTest constructor
 -- @treturn table MBTest instance
 MBTest.newExtendedMBTest = (args) ->
-  lt = MBTest.newMBTest(args)
+  mbtest = MBTest.newMBTest(args)
 
-  lt.registerAssertion {
+  mbtest.registerAssertion {
     assertion: (x, y, msg) ->
       if x == y then
         return true, msg
@@ -254,7 +254,7 @@ MBTest.newExtendedMBTest = (args) ->
     name_inverted: "are_not_equal", message_inverted: "Values are equal"
   }
 
-  lt.registerAssertion {
+  mbtest.registerAssertion {
     assertion: (x, y, msg) ->
       ok = deepcompare x, y
       if ok
@@ -265,19 +265,19 @@ MBTest.newExtendedMBTest = (args) ->
     name_inverted: "are_not_same", message_inverted: "Values are same"
   }
 
-  lt.registerAssertion {
+  mbtest.registerAssertion {
     assertion: (value, typenames, msg) ->
       if type(typenames) ~= "table" then
         typenames = {typenames}
       for _, typename in pairs typenames
-        if lt.isinstance(value, typename)
+        if mbtest.isinstance(value, typename)
           return true, msg
       return false, msg
     name: "is_instance", message: "Value is not instance of any of allowed types"
     name_inverted: "is_not_instance", message_inverted: "Value is instance of disallowed type"
   }
 
-  lt.registerAssertion {
+  mbtest.registerAssertion {
     assertion: (value, msg) ->
       if value
         return true, msg
@@ -287,7 +287,7 @@ MBTest.newExtendedMBTest = (args) ->
     name_inverted: "is_falsy", message_inverted: "Value is not falsy"
   }
 
-  lt.registerAssertion {
+  mbtest.registerAssertion {
     assertion: (func, msg) ->
       ok = pcall func
       if ok
@@ -298,7 +298,7 @@ MBTest.newExtendedMBTest = (args) ->
     name_inverted: "has_errors", message_inverted: "No errors occured"
   }
 
-  return lt
+  return mbtest
 
 
 return setmetatable MBTest, {

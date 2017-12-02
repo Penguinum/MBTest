@@ -128,24 +128,24 @@ MBTest.newMBTest = function(args)
       msg = msg
     }
   end
-  local lt = {
+  local mbtest = {
     onError = args.onError or function(self, msg)
       return self:stop("Error: " .. tostring(msg))
     end,
     onFail = args.onFail
   }
-  if lt.onFail == "stop" then
-    lt.onFail = function(self, msg)
+  if mbtest.onFail == "stop" then
+    mbtest.onFail = function(self, msg)
       return self:stop(msg)
     end
   end
-  if lt.onError == "stop" then
-    lt.onError = function(self, msg)
+  if mbtest.onError == "stop" then
+    mbtest.onError = function(self, msg)
       return self:stop(msg)
     end
   end
-  lt.run = function(name, func)
-    if lt.stopped then
+  mbtest.run = function(name, func)
+    if mbtest.stopped then
       return 
     end
     ltContext:push(name)
@@ -154,18 +154,18 @@ MBTest.newMBTest = function(args)
     end)
     ltContext:pop()
     if (not ok) then
-      if not lt.stopped then
-        if lt.onError then
-          return lt:onError(ret)
+      if not mbtest.stopped then
+        if mbtest.onError then
+          return mbtest:onError(ret)
         else
           return error(ret)
         end
       end
     end
   end
-  lt.stop = function(self, msg)
-    lt.stopped = true
-    lt.result = function()
+  mbtest.stop = function(self, msg)
+    mbtest.stopped = true
+    mbtest.result = function()
       return {
         ok = false,
         msg = msg
@@ -173,16 +173,16 @@ MBTest.newMBTest = function(args)
     end
   end
   local typecheckers = { }
-  lt.isinstance = function(value, typename)
+  mbtest.isinstance = function(value, typename)
     if typecheckers[typename] then
       return typecheckers[typename](value)
     end
     return type(value) == typename
   end
-  lt.registerType = function(name, typechecker)
+  mbtest.registerType = function(name, typechecker)
     typecheckers[name] = typechecker
   end
-  lt.report = function()
+  mbtest.report = function()
     local getResult
     getResult = function(context)
       local ret = { }
@@ -220,9 +220,9 @@ MBTest.newMBTest = function(args)
     local _, ret = getResult(ltContext)
     return ret
   end
-  lt.result = function()
+  mbtest.result = function()
     local indent = "-> "
-    local result = lt.report()
+    local result = mbtest.report()
     if result.ok then
       return {
         ok = true,
@@ -254,14 +254,14 @@ MBTest.newMBTest = function(args)
   local wrapAssertion
   wrapAssertion = function(func, message, invert)
     return function(...)
-      if lt.stopped then
+      if mbtest.stopped then
         return 
       end
       local ok, succeed, msg = pcall(func, ...)
       if not ok then
         ltContext:addCheckResult(fail("Error: " .. tostring(succeed)))
-        if lt.onError then
-          return lt:onError(succeed)
+        if mbtest.onError then
+          return mbtest:onError(succeed)
         end
       else
         msg = msg or message
@@ -273,26 +273,26 @@ MBTest.newMBTest = function(args)
         else
           msg = msg .. " " .. getLine()
           ltContext:addCheckResult(fail(msg))
-          if lt.onFail then
-            return lt:onFail(msg)
+          if mbtest.onFail then
+            return mbtest:onFail(msg)
           end
         end
       end
     end
   end
-  lt.registerAssertion = function(args)
+  mbtest.registerAssertion = function(args)
     if args.name then
-      lt[args.name] = wrapAssertion(args.assertion, args.message)
+      mbtest[args.name] = wrapAssertion(args.assertion, args.message)
     end
     if args.name_inverted then
-      lt[args.name_inverted] = wrapAssertion(args.assertion, args.message_inverted, true)
+      mbtest[args.name_inverted] = wrapAssertion(args.assertion, args.message_inverted, true)
     end
   end
-  return lt
+  return mbtest
 end
 MBTest.newExtendedMBTest = function(args)
-  local lt = MBTest.newMBTest(args)
-  lt.registerAssertion({
+  local mbtest = MBTest.newMBTest(args)
+  mbtest.registerAssertion({
     assertion = function(x, y, msg)
       if x == y then
         return true, msg
@@ -305,7 +305,7 @@ MBTest.newExtendedMBTest = function(args)
     name_inverted = "are_not_equal",
     message_inverted = "Values are equal"
   })
-  lt.registerAssertion({
+  mbtest.registerAssertion({
     assertion = function(x, y, msg)
       local ok = deepcompare(x, y)
       if ok then
@@ -319,7 +319,7 @@ MBTest.newExtendedMBTest = function(args)
     name_inverted = "are_not_same",
     message_inverted = "Values are same"
   })
-  lt.registerAssertion({
+  mbtest.registerAssertion({
     assertion = function(value, typenames, msg)
       if type(typenames) ~= "table" then
         typenames = {
@@ -327,7 +327,7 @@ MBTest.newExtendedMBTest = function(args)
         }
       end
       for _, typename in pairs(typenames) do
-        if lt.isinstance(value, typename) then
+        if mbtest.isinstance(value, typename) then
           return true, msg
         end
       end
@@ -338,7 +338,7 @@ MBTest.newExtendedMBTest = function(args)
     name_inverted = "is_not_instance",
     message_inverted = "Value is instance of disallowed type"
   })
-  lt.registerAssertion({
+  mbtest.registerAssertion({
     assertion = function(value, msg)
       if value then
         return true, msg
@@ -350,7 +350,7 @@ MBTest.newExtendedMBTest = function(args)
     name_inverted = "is_falsy",
     message_inverted = "Value is not falsy"
   })
-  lt.registerAssertion({
+  mbtest.registerAssertion({
     assertion = function(func, msg)
       local ok = pcall(func)
       if ok then
@@ -363,7 +363,7 @@ MBTest.newExtendedMBTest = function(args)
     name_inverted = "has_errors",
     message_inverted = "No errors occured"
   })
-  return lt
+  return mbtest
 end
 return setmetatable(MBTest, {
   __call = function(self, ...)
