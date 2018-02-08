@@ -51,8 +51,8 @@ deepcompare = function(table1, table2)
     for k in pairs(b) do
       if type(k) == "table" then
         table.insert(keyarr, k)
-        keyset[k] = true
       end
+      keyset[k] = true
     end
     for k_a, v_a in pairs(a) do
       local v_b = b[k_a]

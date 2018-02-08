@@ -52,7 +52,7 @@ deepcompare = (table1, table2) ->
     for k in pairs b
       if type(k) == "table"
         table.insert(keyarr, k)
-        keyset[k] = true
+      keyset[k] = true
     for k_a, v_a in pairs a
       v_b = b[k_a]
       if type(k_a) == "table"
