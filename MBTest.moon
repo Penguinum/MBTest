@@ -1,5 +1,3 @@
-#!/usr/bin/env moon
-
 MBTest = {
   _VERSION: "MBTest v0.5.0"
   _DESCRIPTION: "A tiny testing library for Lua with user-defined assertions and data types."
